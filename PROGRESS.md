@@ -22,11 +22,12 @@
   - [x] test with mock server (3 tests passing)
   - [x] commit
 
-- [ ] **stage 4: connection pool**
-  - [ ] lazy connection
-  - [ ] idle timeout
-  - [ ] graceful shutdown
-  - [ ] commit
+- [x] **stage 4: connection pool** ✓
+  - [x] lazy connection (only connect on first access)
+  - [x] idle timeout with background reaper
+  - [x] graceful shutdown (close all connections)
+  - [x] 5 tests passing
+  - [x] commit
 
 - [ ] **stage 5: fuse filesystem**
   - [ ] basic mount/unmount
