@@ -148,3 +148,12 @@ func ParseServerName(name string) (scope, server string) {
 	}
 	return "", name
 }
+
+func MarshalServers(servers map[string]*ServerConfig) ([]byte, error) {
+	return json.MarshalIndent(servers, "", "  ")
+}
+
+func SafeServerName(name string) string {
+	name = strings.TrimPrefix(name, "@")
+	return strings.ReplaceAll(name, "/", "_")
+}

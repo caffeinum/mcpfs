@@ -29,30 +29,30 @@
   - [x] 5 tests passing
   - [x] commit
 
-- [ ] **stage 5: fuse filesystem**
-  - [ ] basic mount/unmount
-  - [ ] root directory listing
-  - [ ] server directories
-  - [ ] tool directories
-  - [ ] .schema files
-  - [ ] .call files (read/write)
-  - [ ] .result files
-  - [ ] commit
+- [x] **stage 5: fuse filesystem** ✓
+  - [x] basic mount/unmount with go-fuse/v2
+  - [x] root directory listing (scopes + .config)
+  - [x] server directories with lazy connect
+  - [x] tool directories
+  - [x] .schema files (server + tool level)
+  - [x] .call files (read executes, write with json args)
+  - [x] .result files (cached last result)
+  - [x] .status files per server
+  - [x] commit
 
-- [ ] **stage 6: cli commands**
-  - [ ] mount/umount
-  - [ ] add server
-  - [ ] auth management
-  - [ ] status/list
-  - [ ] commit
+- [x] **stage 6: cli commands** ✓
+  - [x] mount/umount
+  - [x] add server (stdio + http)
+  - [x] auth management (save tokens)
+  - [x] status/list
+  - [x] commit
 
 - [ ] **stage 7: error handling & polish**
-  - [ ] proper errno mapping
-  - [ ] integration tests
   - [ ] readme
   - [ ] final commit
 
 ## notes
 
-- using bazil.org/fuse for fuse bindings
+- switched from bazil.org/fuse to go-fuse/v2 (macos compat)
 - go 1.25.5 confirmed
+- 14 tests passing across all packages
