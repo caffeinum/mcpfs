@@ -15,12 +15,12 @@
   - [x] test config loading (6 tests passing)
   - [x] commit
 
-- [ ] **stage 3: mcp client**
-  - [ ] json-rpc 2.0 base
-  - [ ] stdio transport
-  - [ ] http transport
-  - [ ] test with mock server
-  - [ ] commit
+- [x] **stage 3: mcp client** ✓
+  - [x] json-rpc 2.0 base with atomic request ids
+  - [x] stdio transport (spawn process, newline-delimited json)
+  - [x] http transport with configurable timeout
+  - [x] test with mock server (3 tests passing)
+  - [x] commit
 
 - [ ] **stage 4: connection pool**
   - [ ] lazy connection
