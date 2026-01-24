@@ -8,7 +8,18 @@ mount mcp servers as a fuse filesystem. mcp tools become files and directories.
 go install github.com/caffeinum/mcpfs/cmd/mcpfs@latest
 ```
 
-requires macos with macfuse or linux with fuse.
+### requirements
+
+**macos**: install [macfuse](https://osxfuse.github.io/)
+```bash
+brew install --cask macfuse
+```
+
+**linux**: install fuse
+```bash
+sudo apt install fuse  # debian/ubuntu
+sudo dnf install fuse  # fedora
+```
 
 ## usage
 

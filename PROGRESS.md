@@ -47,9 +47,9 @@
   - [x] status/list
   - [x] commit
 
-- [ ] **stage 7: error handling & polish**
-  - [ ] readme
-  - [ ] final commit
+- [x] **stage 7: error handling & polish** ✓
+  - [x] readme with install instructions
+  - [x] final commit
 
 ## notes
 
