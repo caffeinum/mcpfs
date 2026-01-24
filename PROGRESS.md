@@ -2,18 +2,18 @@
 
 ## stages
 
-- [ ] **stage 1: project setup**
+- [x] **stage 1: project setup** ✓
   - [x] check go version (1.25.5 - good)
   - [x] git init
-  - [ ] go mod init
-  - [ ] basic cli skeleton
-  - [ ] commit
+  - [x] go mod init
+  - [x] basic cli skeleton (cobra)
+  - [x] commit c2049bf
 
-- [ ] **stage 2: config system**
-  - [ ] config loading/parsing
-  - [ ] auth token management
-  - [ ] test config loading
-  - [ ] commit
+- [x] **stage 2: config system** ✓
+  - [x] config loading/parsing
+  - [x] auth token management with ${auth.var} resolution
+  - [x] test config loading (6 tests passing)
+  - [x] commit
 
 - [ ] **stage 3: mcp client**
   - [ ] json-rpc 2.0 base
