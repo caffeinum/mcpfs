@@ -2,6 +2,8 @@
 
 BINARY := mcpfs
 BUILD_DIR := ./cmd/mcpfs
+VERSION := $(shell git describe --tags --always --dirty 2>/dev/null || echo "dev")
+LDFLAGS := -ldflags "-X main.version=$(VERSION)"
 
 # detect OS
 UNAME := $(shell uname -s)
@@ -24,13 +26,13 @@ build-macos:
 	CGO_ENABLED=1 \
 	CGO_CFLAGS="$(MACOS_CGO_CFLAGS)" \
 	CGO_LDFLAGS="$(MACOS_CGO_LDFLAGS)" \
-	go build -o $(BINARY) $(BUILD_DIR)
+	go build $(LDFLAGS) -o $(BINARY) $(BUILD_DIR)
 
 build-linux:
-	CGO_ENABLED=1 go build -o $(BINARY) $(BUILD_DIR)
+	CGO_ENABLED=1 go build $(LDFLAGS) -o $(BINARY) $(BUILD_DIR)
 
 build-windows:
-	CGO_ENABLED=1 GOOS=windows go build -o $(BINARY).exe $(BUILD_DIR)
+	CGO_ENABLED=1 GOOS=windows go build $(LDFLAGS) -o $(BINARY).exe $(BUILD_DIR)
 
 clean:
 	rm -f $(BINARY) $(BINARY).exe
