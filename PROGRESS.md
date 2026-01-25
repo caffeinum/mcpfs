@@ -51,8 +51,38 @@
   - [x] readme with install instructions
   - [x] final commit
 
+- [ ] **stage 8: fuse-t migration** (in progress)
+  - [x] switched from go-fuse/v2 to cgofuse (libfuse wrapper)
+  - [x] configured build to link against fuse-t
+  - [ ] resolve macfuse conflict (macfuse installed alongside fuse-t causes dialog)
+  - [ ] test full filesystem operations
+
 ## notes
 
 - switched from bazil.org/fuse to go-fuse/v2 (macos compat)
+- switched from go-fuse/v2 to cgofuse (supports fuse-t via libfuse API)
 - go 1.25.5 confirmed
 - 14 tests passing across all packages
+
+## fuse backend history
+
+1. bazil.org/fuse - doesn't compile on macos
+2. go-fuse/v2 - talks directly to kernel, doesn't support fskit
+3. cgofuse + macfuse fskit - fskit extension fails to register
+4. cgofuse + fuse-t - current attempt, works but macfuse conflicts
+
+## build instructions (fuse-t)
+
+```bash
+# install fuse-t (no kernel extension needed)
+# download from https://github.com/macos-fuse-t/fuse-t/releases
+
+# build with fuse-t
+PKG_CONFIG_PATH=/usr/local/lib/pkgconfig \
+CGO_CFLAGS="-I/usr/local/include/fuse" \
+CGO_LDFLAGS="-L/usr/local/lib -lfuse-t" \
+go build ./cmd/mcpfs
+
+# if macfuse is installed, uninstall it first to avoid conflicts
+# run: /Library/Filesystems/macfuse.fs/Contents/Resources/uninstall_macfuse.app
+```

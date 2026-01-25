@@ -73,9 +73,8 @@ func runMount(cmd *cobra.Command, args []string) error {
 	mountpoint := args[0]
 	configDir, _ := cmd.Flags().GetString("config")
 
-	if err := os.MkdirAll(mountpoint, 0755); err != nil {
-		return fmt.Errorf("create mountpoint: %w", err)
-	}
+	// try to create mountpoint, but don't fail if we can't (fskit may handle it)
+	os.MkdirAll(mountpoint, 0755)
 
 	return fs.Mount(fs.MountOptions{
 		Mountpoint: mountpoint,

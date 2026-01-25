@@ -6,8 +6,7 @@ import (
 	"os/signal"
 	"syscall"
 
-	gofuse "github.com/hanwen/go-fuse/v2/fs"
-	"github.com/hanwen/go-fuse/v2/fuse"
+	"github.com/winfsp/cgofuse/fuse"
 
 	"github.com/caffeinum/mcpfs/internal/config"
 	"github.com/caffeinum/mcpfs/internal/pool"
@@ -29,21 +28,8 @@ func Mount(opts MountOptions) error {
 		Config: cfg,
 	})
 
-	mcpfs := New(cfg, p)
-	root := &RootNode{mcpfs: mcpfs}
-
-	mountOpts := &gofuse.Options{
-		MountOptions: fuse.MountOptions{
-			Name:   "mcpfs",
-			FsName: "mcpfs",
-		},
-	}
-
-	server, err := gofuse.Mount(opts.Mountpoint, root, mountOpts)
-	if err != nil {
-		p.Close()
-		return fmt.Errorf("mount: %w", err)
-	}
+	cgoFS := NewCgoFS(cfg, p)
+	host := fuse.NewFileSystemHost(cgoFS)
 
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
@@ -51,15 +37,22 @@ func Mount(opts MountOptions) error {
 	go func() {
 		<-sigChan
 		fmt.Println("\nshutting down...")
-		server.Unmount()
+		host.Unmount()
 	}()
 
-	fmt.Printf("mounted at %s\n", opts.Mountpoint)
+	fmt.Printf("mounting at %s\n", opts.Mountpoint)
 	fmt.Println("press ctrl+c to unmount")
 
-	server.Wait()
+	// fuse-t uses NFS internally, no kernel extension needed
+	mountArgs := []string{opts.Mountpoint}
+
+	ok := host.Mount("", mountArgs)
+
 	p.Close()
 
+	if !ok {
+		return fmt.Errorf("mount failed")
+	}
 	return nil
 }
 
