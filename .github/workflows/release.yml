@@ -28,8 +28,8 @@ jobs:
           CGO_ENABLED=1 \
           CGO_CFLAGS="-I/Library/Frameworks/fuse_t.framework/Versions/A/Headers" \
           CGO_LDFLAGS="-L/usr/local/lib -lfuse-t -Wl,-rpath,/usr/local/lib" \
-          go build -ldflags "-X main.version=${{ github.ref_name }}" -o mcpfs-darwin-arm64 ./cmd/mcpfs
-          tar -czvf mcpfs_${{ github.ref_name }}_darwin_arm64.tar.gz mcpfs-darwin-arm64
+          go build -ldflags "-X main.version=${{ github.ref_name }}" -o mcpfs ./cmd/mcpfs
+          tar -czvf mcpfs_darwin_arm64.tar.gz mcpfs
 
       - uses: actions/upload-artifact@v4
         with:
@@ -52,8 +52,8 @@ jobs:
 
       - name: Build linux binaries
         run: |
-          CGO_ENABLED=1 go build -ldflags "-X main.version=${{ github.ref_name }}" -o mcpfs-linux-amd64 ./cmd/mcpfs
-          tar -czvf mcpfs_${{ github.ref_name }}_linux_amd64.tar.gz mcpfs-linux-amd64
+          CGO_ENABLED=1 go build -ldflags "-X main.version=${{ github.ref_name }}" -o mcpfs ./cmd/mcpfs
+          tar -czvf mcpfs_linux_amd64.tar.gz mcpfs
 
       - uses: actions/upload-artifact@v4
         with:

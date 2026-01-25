@@ -22,41 +22,51 @@ mcpfs fixes this:
 - **unix pipes** - `cat .result | jq '.data[0]'` - filter before it hits your context
 - **separate process** - mcp crashes don't take down your session
 
-## quick start
+## install
+
+**macos (apple silicon)**:
 
 ```bash
-# install fuse-t first (macos)
+# install fuse-t first
 brew install macos-fuse-t/homebrew-cask/fuse-t
-# linux: sudo apt install libfuse-dev
 
+# download binary
+curl -L https://github.com/caffeinum/mcpfs/releases/latest/download/mcpfs_darwin_arm64.tar.gz | tar xz
+mv mcpfs-darwin-arm64 ~/.local/bin/mcpfs
+```
+
+**linux (amd64)**:
+
+```bash
+sudo apt install libfuse-dev  # or: dnf install fuse-devel
+
+curl -L https://github.com/caffeinum/mcpfs/releases/latest/download/mcpfs_linux_amd64.tar.gz | tar xz
+mv mcpfs-linux-amd64 ~/.local/bin/mcpfs
+```
+
+**build from source**:
+
+```bash
 git clone https://github.com/caffeinum/mcpfs
 cd mcpfs
 make install  # builds to ~/.local/bin
+```
 
+## quick start
+
+```bash
 # mount
 mkdir -p ~/mcp
 mcpfs mount ~/mcp
-```
 
-## usage
-
-```bash
-# add a server (no restart needed)
+# add a server (in another terminal)
 mcpfs add @github/mcp -- npx -y @modelcontextprotocol/server-github
 mcpfs auth @github/mcp "ghp_yourtoken"
 
-# explore
+# use it
 ls ~/mcp/@github/mcp/
-# search_repositories  create_issue  get_file_contents  ...
-
-# check what a tool expects
 cat ~/mcp/@github/mcp/search_repositories/.schema
-
-# call it
 echo '{"query":"mcpfs language:go"}' > ~/mcp/@github/mcp/search_repositories/.call
-cat ~/mcp/@github/mcp/search_repositories/.result
-
-# pipe it (the whole point)
 cat ~/mcp/@github/mcp/search_repositories/.result | jq '.items[0].html_url'
 ```
 
@@ -104,31 +114,6 @@ mcpfs add @name --url <u>   # add http server
 mcpfs auth @name <token>    # save auth token
 mcpfs list                  # show servers
 ```
-
-## install
-
-**macos**: requires [fuse-t](https://github.com/macos-fuse-t/fuse-t/releases) (no kernel extension, no sudo)
-
-```bash
-brew install macos-fuse-t/homebrew-cask/fuse-t
-```
-
-**linux**: 
-
-```bash
-sudo apt install libfuse-dev   # debian/ubuntu
-sudo dnf install fuse-devel    # fedora
-```
-
-**build**:
-
-```bash
-git clone https://github.com/caffeinum/mcpfs
-cd mcpfs
-make install  # builds and installs to ~/.local/bin
-```
-
-> note: `go install` doesn't work on macos due to cgo/fuse-t linking. need to build from source.
 
 ## license
 
