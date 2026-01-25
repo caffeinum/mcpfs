@@ -15,9 +15,9 @@ import (
 
 type CgoFS struct {
 	fuse.FileSystemBase
-	cfg    *config.Config
-	pool   *pool.Pool
-	mu     sync.RWMutex
+	cfg     *config.Config
+	pool    *pool.Pool
+	mu      sync.RWMutex
 	results map[string]*mcp.ToolResult // path -> result cache
 }
 
@@ -69,6 +69,7 @@ func (fs *CgoFS) Getattr(path string, stat *fuse.Stat_t, fh uint64) int {
 		name := parts[2]
 		if name == ".status" || name == ".schema" {
 			stat.Mode = fuse.S_IFREG | 0444
+			stat.Size = int64(len(fs.getFileContent(path)))
 			return 0
 		}
 
@@ -85,20 +86,18 @@ func (fs *CgoFS) Getattr(path string, stat *fuse.Stat_t, fh uint64) int {
 		}
 
 	case 4: // tool files: .schema, .call, .result
-		serverName := parts[0] + "/" + parts[1]
-		toolName := parts[2]
 		fileName := parts[3]
 
 		if fileName == ".schema" || fileName == ".result" {
 			stat.Mode = fuse.S_IFREG | 0444
+			stat.Size = int64(len(fs.getFileContent(path)))
 			return 0
 		}
 		if fileName == ".call" {
 			stat.Mode = fuse.S_IFREG | 0666
+			stat.Size = 0
 			return 0
 		}
-		_ = serverName
-		_ = toolName
 	}
 
 	return -fuse.ENOENT
@@ -209,7 +208,10 @@ func (fs *CgoFS) Write(path string, buff []byte, ofst int64, fh uint64) int {
 
 	result, err := conn.CallTool(context.Background(), toolName, args)
 	if err != nil {
-		return -fuse.EIO
+		result = &mcp.ToolResult{
+			Content: []mcp.ContentBlock{{Type: "text", Text: err.Error()}},
+			IsError: true,
+		}
 	}
 
 	fs.mu.Lock()

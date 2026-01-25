@@ -51,11 +51,13 @@
   - [x] readme with install instructions
   - [x] final commit
 
-- [ ] **stage 8: fuse-t migration** (in progress)
+- [x] **stage 8: fuse-t migration** ✓
   - [x] switched from go-fuse/v2 to cgofuse (libfuse wrapper)
   - [x] configured build to link against fuse-t
-  - [ ] resolve macfuse conflict (macfuse installed alongside fuse-t causes dialog)
-  - [ ] test full filesystem operations
+  - [x] resolve macfuse conflict (uninstall macfuse)
+  - [x] fixed mcp notification (no id for notifications/initialized)
+  - [x] fixed Getattr triggering tool calls
+  - [x] test full filesystem operations
 
 ## notes
 
@@ -77,12 +79,11 @@
 # install fuse-t (no kernel extension needed)
 # download from https://github.com/macos-fuse-t/fuse-t/releases
 
-# build with fuse-t
-PKG_CONFIG_PATH=/usr/local/lib/pkgconfig \
-CGO_CFLAGS="-I/usr/local/include/fuse" \
-CGO_LDFLAGS="-L/usr/local/lib -lfuse-t" \
-go build ./cmd/mcpfs
-
 # if macfuse is installed, uninstall it first to avoid conflicts
 # run: /Library/Filesystems/macfuse.fs/Contents/Resources/uninstall_macfuse.app
+
+# build with fuse-t
+CGO_CFLAGS="-I/Library/Frameworks/fuse_t.framework/Versions/A/Headers" \
+CGO_LDFLAGS="-L/usr/local/lib -lfuse-t -Wl,-rpath,/usr/local/lib" \
+go build ./cmd/mcpfs
 ```

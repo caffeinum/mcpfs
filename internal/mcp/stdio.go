@@ -12,11 +12,11 @@ import (
 
 type StdioClient struct {
 	baseClient
-	cmd     *exec.Cmd
-	stdin   io.WriteCloser
-	stdout  *bufio.Reader
-	mu      sync.Mutex
-	closed  bool
+	cmd    *exec.Cmd
+	stdin  io.WriteCloser
+	stdout *bufio.Reader
+	mu     sync.Mutex
+	closed bool
 }
 
 type StdioConfig struct {
@@ -100,8 +100,11 @@ func (c *StdioClient) Initialize(ctx context.Context) error {
 		return fmt.Errorf("parse initialize result: %w", err)
 	}
 
-	notifyReq := c.makeRequest("notifications/initialized", nil)
-	data, _ := json.Marshal(notifyReq)
+	notify := map[string]any{
+		"jsonrpc": "2.0",
+		"method":  "notifications/initialized",
+	}
+	data, _ := json.Marshal(notify)
 	c.mu.Lock()
 	c.stdin.Write(append(data, '\n'))
 	c.mu.Unlock()

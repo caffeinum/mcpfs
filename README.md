@@ -10,15 +10,22 @@ go install github.com/caffeinum/mcpfs/cmd/mcpfs@latest
 
 ### requirements
 
-**macos**: install [macfuse](https://osxfuse.github.io/)
-```bash
-brew install --cask macfuse
-```
+**macos**: install [fuse-t](https://github.com/macos-fuse-t/fuse-t/releases) (no kernel extension required)
+
+if macfuse is installed, uninstall it first to avoid conflicts.
 
 **linux**: install fuse
 ```bash
 sudo apt install fuse  # debian/ubuntu
 sudo dnf install fuse  # fedora
+```
+
+### build from source (macos)
+
+```bash
+CGO_CFLAGS="-I/Library/Frameworks/fuse_t.framework/Versions/A/Headers" \
+CGO_LDFLAGS="-L/usr/local/lib -lfuse-t -Wl,-rpath,/usr/local/lib" \
+go build ./cmd/mcpfs
 ```
 
 ## usage
