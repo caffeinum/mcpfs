@@ -1,141 +1,111 @@
 # mcpfs
 
-mount mcp servers as a fuse filesystem. mcp tools become files and directories.
+mcp servers as a filesystem. because config files are where tools go to die.
 
-## install
+## why
 
-```bash
-go install github.com/caffeinum/mcpfs/cmd/mcpfs@latest
-```
+i got tired of this loop:
 
-### requirements
+1. add mcp to claude config
+2. restart claude
+3. mcp fails (token expired, package updated, who knows)
+4. debug for 20 minutes
+5. give up, remove mcp
+6. repeat next week
 
-**macos**: install [fuse-t](https://github.com/macos-fuse-t/fuse-t/releases) (no kernel extension required)
+also: some mcps return 50k tokens. good luck fitting that in context.
 
-if macfuse is installed, uninstall it first to avoid conflicts.
+mcpfs fixes this:
 
-**linux**: install fuse
-```bash
-sudo apt install fuse  # debian/ubuntu
-sudo dnf install fuse  # fedora
-```
+- **no restarts** - add servers while claude is running
+- **lazy loading** - servers only spawn when you actually use them  
+- **unix pipes** - `cat .result | jq '.data[0]'` - filter before it hits your context
+- **separate process** - mcp crashes don't take down your session
 
-### build from source (macos)
-
-```bash
-CGO_CFLAGS="-I/Library/Frameworks/fuse_t.framework/Versions/A/Headers" \
-CGO_LDFLAGS="-L/usr/local/lib -lfuse-t -Wl,-rpath,/usr/local/lib" \
-go build ./cmd/mcpfs
-```
-
-## usage
-
-### add an mcp server
+## quick start
 
 ```bash
-# stdio server (spawns a process)
-mcpfs add @notion/mcp -- npx -y @notionhq/notion-mcp-server
+# install fuse-t first (macos)
+brew install macos-fuse-t/homebrew-cask/fuse-t
+# linux: sudo apt install libfuse-dev
 
-# http server
-mcpfs add @github/mcp --url https://mcp.github.com
-```
+git clone https://github.com/caffeinum/mcpfs
+cd mcpfs
+make install  # builds and copies to ~/.local/bin
 
-### set auth token
-
-```bash
-mcpfs auth @notion/mcp "secret-token-here"
-```
-
-tokens are stored in `~/.mcp/.config/auth/` with 0600 permissions.
-
-### mount the filesystem
-
-```bash
+# mount
 mkdir -p ~/mcp
 mcpfs mount ~/mcp
 ```
 
-press ctrl+c to unmount.
-
-### browse and use tools
+## usage
 
 ```bash
-# list servers
-ls ~/mcp/
-# @notion  @github  .config
+# add a server (no restart needed)
+mcpfs add @github/mcp -- npx -y @modelcontextprotocol/server-github
+mcpfs auth @github/mcp "ghp_yourtoken"
 
-# list tools for a server
-ls ~/mcp/@notion/mcp/
-# search  get-page  create-page  .status  .schema
+# explore
+ls ~/mcp/@github/mcp/
+# search_repositories  create_issue  get_file_contents  ...
 
-# view tool schema
-cat ~/mcp/@notion/mcp/search/.schema
+# check what a tool expects
+cat ~/mcp/@github/mcp/search_repositories/.schema
 
-# call a tool (read executes with no args)
-cat ~/mcp/@notion/mcp/search/.call
+# call it
+echo '{"query":"mcpfs language:go"}' > ~/mcp/@github/mcp/search_repositories/.call
+cat ~/mcp/@github/mcp/search_repositories/.result
 
-# call a tool with args
-echo '{"query": "meeting notes"}' > ~/mcp/@notion/mcp/search/.call
-
-# read cached result
-cat ~/mcp/@notion/mcp/search/.result
+# pipe it (the whole point)
+cat ~/mcp/@github/mcp/search_repositories/.result | jq '.items[0].html_url'
 ```
 
-## filesystem structure
+## for claude code
+
+add this to your claude config or just tell claude to use it:
+
+```
+mcp servers are mounted at ~/mcp
+to call a tool: echo '{"arg":"value"}' > ~/mcp/@server/mcp/tool/.call
+to read result: cat ~/mcp/@server/mcp/tool/.result
+to add new mcp: mcpfs add @name/mcp -- npx -y @package/name
+```
+
+claude can now add and use mcps on the fly. no config editing. no restarts.
+
+## filesystem layout
 
 ```
 ~/mcp/
-├── .config/
-│   └── servers.json        # mcp server definitions
-├── @{scope}/
-│   └── {server}/
-│       ├── .status         # connection status
-│       ├── .schema         # all tool schemas
-│       └── {tool}/
-│           ├── .schema     # tool input/output schema
-│           ├── .call       # write json → execute tool
-│           └── .result     # last call result
+├── .config/servers.json     # server definitions (auto-managed)
+├── @github/mcp/
+│   ├── .schema              # all tools  
+│   ├── .status              # connection state
+│   └── search_repositories/
+│       ├── .schema          # input schema
+│       ├── .call            # write json to execute
+│       └── .result          # last result (cached)
 ```
-
-## config format
-
-`~/.mcp/.config/servers.json`:
-
-```json
-{
-  "@notion/mcp": {
-    "transport": "stdio",
-    "command": "npx",
-    "args": ["-y", "@notionhq/notion-mcp-server"],
-    "env": {"NOTION_TOKEN": "${auth.token}"}
-  },
-  "@github/mcp": {
-    "transport": "http",
-    "url": "https://mcp.github.com",
-    "headers": {"Authorization": "Bearer ${auth.token}"}
-  }
-}
-```
-
-`${auth.token}` is replaced with the value from the auth file.
 
 ## commands
 
 ```bash
-mcpfs mount <mountpoint>    # mount the filesystem
-mcpfs umount <mountpoint>   # unmount
-mcpfs add <name> -- <cmd>   # add stdio server
-mcpfs add <name> --url <u>  # add http server
-mcpfs auth <server> <token> # store auth token
-mcpfs list                  # list configured servers
-mcpfs status                # show connection status
+mcpfs mount <path>          # mount filesystem
+mcpfs add @name -- <cmd>    # add stdio server
+mcpfs add @name --url <u>   # add http server  
+mcpfs auth @name <token>    # save auth token
+mcpfs list                  # show servers
 ```
 
-## features
+## install
 
-- lazy connection: servers only connect when their directory is accessed
-- idle timeout: connections close after 5 minutes of inactivity
-- graceful shutdown: unmount cleans up all child processes
+**macos**: needs [fuse-t](https://github.com/macos-fuse-t/fuse-t/releases) (no kernel extension)
+
+**linux**: `sudo apt install libfuse-dev` or `dnf install fuse-devel`
+
+```bash
+make build    # or: make install
+```
 
 ## license
 
