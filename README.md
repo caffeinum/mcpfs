@@ -24,24 +24,26 @@ mcpfs fixes this:
 
 ## install
 
-**macos (apple silicon)**:
+**macos (homebrew)**:
 
 ```bash
-# install fuse-t first
-brew install macos-fuse-t/homebrew-cask/fuse-t
-
-# download binary
-curl -L https://github.com/caffeinum/mcpfs/releases/latest/download/mcpfs_darwin_arm64.tar.gz | tar xz
-mv mcpfs-darwin-arm64 ~/.local/bin/mcpfs
+brew install caffeinum/tap/mcpfs
 ```
 
-**linux (amd64)**:
+**macos (manual)**:
+
+```bash
+brew install macos-fuse-t/homebrew-cask/fuse-t
+curl -L https://github.com/caffeinum/mcpfs/releases/latest/download/mcpfs_darwin_arm64.tar.gz | tar xz
+mv mcpfs ~/.local/bin/
+```
+
+**linux**:
 
 ```bash
 sudo apt install libfuse-dev  # or: dnf install fuse-devel
-
 curl -L https://github.com/caffeinum/mcpfs/releases/latest/download/mcpfs_linux_amd64.tar.gz | tar xz
-mv mcpfs-linux-amd64 ~/.local/bin/mcpfs
+mv mcpfs ~/.local/bin/
 ```
 
 **build from source**:
@@ -49,7 +51,7 @@ mv mcpfs-linux-amd64 ~/.local/bin/mcpfs
 ```bash
 git clone https://github.com/caffeinum/mcpfs
 cd mcpfs
-make install  # builds to ~/.local/bin
+make install
 ```
 
 ## quick start
