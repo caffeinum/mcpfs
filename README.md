@@ -1,4 +1,11 @@
-# mcpfs
+```
+                        ___     
+  _ __ ___   ___ _ __  / __\___
+ | '_ ` _ \ / __| '_ \/ _\/ __|
+ | | | | | | (__| |_) / / \__ \
+ |_| |_| |_|\___| .__/\/  |___/
+                |_|            
+```
 
 mcp servers as a filesystem. because config files are where tools go to die.
 
@@ -27,13 +34,14 @@ mcpfs fixes this:
 **macos (homebrew)**:
 
 ```bash
+brew install --cask macos-fuse-t/cask/fuse-t
 brew install caffeinum/tap/mcpfs
 ```
 
 **macos (manual)**:
 
 ```bash
-brew install macos-fuse-t/homebrew-cask/fuse-t
+brew install --cask macos-fuse-t/cask/fuse-t
 curl -L https://github.com/caffeinum/mcpfs/releases/latest/download/mcpfs_darwin_arm64.tar.gz | tar xz
 mv mcpfs ~/.local/bin/
 ```
