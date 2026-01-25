@@ -1,0 +1,60 @@
+version: 2
+
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - id: mcpfs-macos
+    main: ./cmd/mcpfs
+    binary: mcpfs
+    goos:
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+    env:
+      - CGO_ENABLED=1
+    overrides:
+      - goos: darwin
+        goarch: arm64
+        env:
+          - CC=clang
+          - CGO_CFLAGS=-I/Library/Frameworks/fuse_t.framework/Versions/A/Headers
+          - CGO_LDFLAGS=-L/usr/local/lib -lfuse-t -Wl,-rpath,/usr/local/lib
+      - goos: darwin
+        goarch: amd64
+        env:
+          - CC=clang
+          - CGO_CFLAGS=-I/Library/Frameworks/fuse_t.framework/Versions/A/Headers
+          - CGO_LDFLAGS=-L/usr/local/lib -lfuse-t -Wl,-rpath,/usr/local/lib
+
+  - id: mcpfs-linux
+    main: ./cmd/mcpfs
+    binary: mcpfs
+    goos:
+      - linux
+    goarch:
+      - amd64
+      - arm64
+    env:
+      - CGO_ENABLED=1
+
+archives:
+  - format: tar.gz
+    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+
+checksum:
+  name_template: 'checksums.txt'
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - '^docs:'
+      - '^test:'
+
+release:
+  github:
+    owner: caffeinum
+    name: mcpfs

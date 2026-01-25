@@ -1,0 +1,84 @@
+name: release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release-macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.21'
+
+      - name: Install fuse-t
+        run: brew install macos-fuse-t/homebrew-cask/fuse-t
+
+      - name: Build macos binaries
+        run: |
+          CGO_ENABLED=1 \
+          CGO_CFLAGS="-I/Library/Frameworks/fuse_t.framework/Versions/A/Headers" \
+          CGO_LDFLAGS="-L/usr/local/lib -lfuse-t -Wl,-rpath,/usr/local/lib" \
+          go build -ldflags "-X main.version=${{ github.ref_name }}" -o mcpfs-darwin-arm64 ./cmd/mcpfs
+          tar -czvf mcpfs_${{ github.ref_name }}_darwin_arm64.tar.gz mcpfs-darwin-arm64
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: macos-binaries
+          path: "*.tar.gz"
+
+  release-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.21'
+
+      - name: Install fuse
+        run: sudo apt-get install -y libfuse-dev
+
+      - name: Build linux binaries
+        run: |
+          CGO_ENABLED=1 go build -ldflags "-X main.version=${{ github.ref_name }}" -o mcpfs-linux-amd64 ./cmd/mcpfs
+          tar -czvf mcpfs_${{ github.ref_name }}_linux_amd64.tar.gz mcpfs-linux-amd64
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linux-binaries
+          path: "*.tar.gz"
+
+  publish:
+    needs: [release-macos, release-linux]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+
+      - name: Create checksums
+        run: |
+          cd dist
+          sha256sum *.tar.gz > checksums.txt
+
+      - uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            dist/*.tar.gz
+            dist/checksums.txt
+          generate_release_notes: true
