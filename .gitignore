@@ -1,4 +1,5 @@
 /mcpfs
+/claude-session
 *.exe
 *.test
 *.out
