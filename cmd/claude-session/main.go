@@ -14,6 +14,7 @@ import (
 func main() {
 	var sessionID string
 	var opencode bool
+	var useCwd bool
 
 	args := os.Args[1:]
 	for i := 0; i < len(args); i++ {
@@ -26,6 +27,8 @@ func main() {
 			if sessionID == "" {
 				fatal("CLAUDE_SESSION_ID or OPENCODE_SESSION_ID not set")
 			}
+		case "--cwd", "-w":
+			useCwd = true
 		case "--opencode", "-o":
 			opencode = true
 		case "--help", "-h":
@@ -36,6 +39,26 @@ func main() {
 				fatal("unknown flag: %s", args[i])
 			}
 			sessionID = args[i]
+		}
+	}
+
+	if useCwd {
+		cwd, err := os.Getwd()
+		if err != nil {
+			fatal("getwd: %v", err)
+		}
+		if opencode {
+			path, err := findOpencodeByCwd(cwd)
+			if err != nil {
+				fatal("%v", err)
+			}
+			sessionID = filepath.Base(strings.TrimSuffix(path, ".json"))
+		} else {
+			path, err := findClaudeByCwd(cwd)
+			if err != nil {
+				fatal("%v", err)
+			}
+			sessionID = strings.TrimSuffix(filepath.Base(path), ".jsonl")
 		}
 	}
 
@@ -62,19 +85,123 @@ outputs session history as jsonl to stdout.
 
 flags:
   --current, -c    use $CLAUDE_SESSION_ID or $OPENCODE_SESSION_ID
+  --cwd, -w        find most recent session for current directory
   --opencode, -o   read from opencode format (~/.local/share/opencode)
   --help, -h       show this help
 
 examples:
   claude-session d68288c5-4553-4ea9-a6fa-846015331b5b
-  claude-session --current | jq 'select(.type=="user")'
-  claude-session --opencode ses_abc123 | grep TODO
+  claude-session --cwd | jq 'select(.type=="user")'
+  claude-session --opencode --cwd | grep TODO
 `)
 }
 
 func fatal(format string, args ...any) {
 	fmt.Fprintf(os.Stderr, "error: "+format+"\n", args...)
 	os.Exit(1)
+}
+
+func findClaudeByCwd(cwd string) (string, error) {
+	home, _ := os.UserHomeDir()
+	encoded := strings.ReplaceAll(cwd, "/", "-")
+	projectDir := filepath.Join(home, ".claude", "projects", encoded)
+
+	entries, err := os.ReadDir(projectDir)
+	if err != nil {
+		return "", fmt.Errorf("no sessions for %s", cwd)
+	}
+
+	type sessionFile struct {
+		path  string
+		mtime int64
+	}
+	var sessions []sessionFile
+
+	for _, entry := range entries {
+		if !strings.HasSuffix(entry.Name(), ".jsonl") {
+			continue
+		}
+		if entry.Name() == "sessions-index.json" {
+			continue
+		}
+		path := filepath.Join(projectDir, entry.Name())
+		info, err := entry.Info()
+		if err != nil {
+			continue
+		}
+		sessions = append(sessions, sessionFile{path: path, mtime: info.ModTime().UnixNano()})
+	}
+
+	if len(sessions) == 0 {
+		return "", fmt.Errorf("no sessions for %s", cwd)
+	}
+
+	sort.Slice(sessions, func(i, j int) bool {
+		return sessions[i].mtime > sessions[j].mtime
+	})
+
+	return sessions[0].path, nil
+}
+
+func findOpencodeByCwd(cwd string) (string, error) {
+	home, _ := os.UserHomeDir()
+	sessionDir := filepath.Join(home, ".local", "share", "opencode", "storage", "session")
+
+	projectDirs, err := os.ReadDir(sessionDir)
+	if err != nil {
+		return "", fmt.Errorf("no opencode sessions")
+	}
+
+	type sessionFile struct {
+		path  string
+		mtime int64
+	}
+	var matches []sessionFile
+
+	for _, projectEntry := range projectDirs {
+		if !projectEntry.IsDir() {
+			continue
+		}
+		projectPath := filepath.Join(sessionDir, projectEntry.Name())
+		sessions, err := os.ReadDir(projectPath)
+		if err != nil {
+			continue
+		}
+		for _, entry := range sessions {
+			if !strings.HasSuffix(entry.Name(), ".json") {
+				continue
+			}
+			path := filepath.Join(projectPath, entry.Name())
+			data, err := os.ReadFile(path)
+			if err != nil {
+				continue
+			}
+			var meta struct {
+				Directory string `json:"directory"`
+			}
+			if err := json.Unmarshal(data, &meta); err != nil {
+				continue
+			}
+			if meta.Directory != cwd {
+				continue
+			}
+			info, err := entry.Info()
+			if err != nil {
+				continue
+			}
+			matches = append(matches, sessionFile{path: path, mtime: info.ModTime().UnixNano()})
+		}
+	}
+
+	if len(matches) == 0 {
+		return "", fmt.Errorf("no opencode sessions for %s", cwd)
+	}
+
+	sort.Slice(matches, func(i, j int) bool {
+		return matches[i].mtime > matches[j].mtime
+	})
+
+	return matches[0].path, nil
 }
 
 func outputClaude(sessionID string) error {
