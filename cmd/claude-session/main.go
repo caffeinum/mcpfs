@@ -67,6 +67,11 @@ func main() {
 		os.Exit(1)
 	}
 
+	if isTerminal() {
+		fmt.Println(sessionID)
+		return
+	}
+
 	if opencode {
 		if err := outputOpencode(sessionID); err != nil {
 			fatal("opencode: %v", err)
@@ -99,6 +104,14 @@ examples:
 func fatal(format string, args ...any) {
 	fmt.Fprintf(os.Stderr, "error: "+format+"\n", args...)
 	os.Exit(1)
+}
+
+func isTerminal() bool {
+	fi, err := os.Stdout.Stat()
+	if err != nil {
+		return false
+	}
+	return fi.Mode()&os.ModeCharDevice != 0
 }
 
 func findClaudeByCwd(cwd string) (string, error) {
